@@ -1,0 +1,114 @@
+version: "3.8"
+
+# NimbusDesk v1 — docker-compose de desarrollo local.
+# Requiere que cada repo nimbusdesk-* esté clonado como hermano de este
+# (ej. D:\Git\nimbusdesk-infra, D:\Git\nimbusdesk-discovery-server, ...).
+#
+# Los servicios de aplicación empiezan comentados: se habilitan a medida que
+# cada repo se va construyendo (ver ROADMAP.md, Fases 1 a 7).
+
+networks:
+  nimbusdesk-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  mssql-data:
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: nimbusdesk-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-nimbusdesk_dev}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-nimbusdesk}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - nimbusdesk-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-nimbusdesk_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: nimbusdesk-mssql
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-NimbusDesk_Dev1}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - nimbusdesk-net
+
+  # --- Fase 1 ---------------------------------------------------------------
+  # discovery-server:
+  #   build: ../nimbusdesk-discovery-server
+  #   container_name: nimbusdesk-discovery-server
+  #   ports:
+  #     - "8761:8761"
+  #   networks:
+  #     - nimbusdesk-net
+
+  # --- Fase 2 ---------------------------------------------------------------
+  # api-gateway:
+  #   build: ../nimbusdesk-api-gateway
+  #   container_name: nimbusdesk-api-gateway
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - discovery-server
+  #   networks:
+  #     - nimbusdesk-net
+
+  # --- Fase 3 ---------------------------------------------------------------
+  # identity-service:
+  #   build: ../nimbusdesk-identity-service
+  #   container_name: nimbusdesk-identity-service
+  #   depends_on:
+  #     - mysql
+  #     - discovery-server
+  #   networks:
+  #     - nimbusdesk-net
+
+  # --- Fase 4 ---------------------------------------------------------------
+  # booking-service:
+  #   build: ../nimbusdesk-booking-service
+  #   container_name: nimbusdesk-booking-service
+  #   depends_on:
+  #     - mysql
+  #     - discovery-server
+  #   networks:
+  #     - nimbusdesk-net
+
+  # --- Fase 5 ---------------------------------------------------------------
+  # partner-bridge-service:
+  #   build: ../nimbusdesk-partner-bridge-service
+  #   container_name: nimbusdesk-partner-bridge-service
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: ${PARTNER_BRIDGE_PROFILE:-mysql}
+  #   depends_on:
+  #     - mysql
+  #     - mssql
+  #     - discovery-server
+  #   networks:
+  #     - nimbusdesk-net
+
+  # --- Fase 7 ---------------------------------------------------------------
+  # web:
+  #   build: ../nimbusdesk-web
+  #   container_name: nimbusdesk-web
+  #   ports:
+  #     - "4200:80"
+  #   depends_on:
+  #     - api-gateway
+  #   networks:
+  #     - nimbusdesk-net
