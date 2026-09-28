@@ -1,0 +1,122 @@
+{
+  "info": {
+    "name": "NimbusDesk v1",
+    "description": "End-to-end flow through the API Gateway: register/login against nimbusdesk-identity-service, then create/inspect/cancel a booking against nimbusdesk-booking-service (which internally calls nimbusdesk-partner-bridge-service). Import into Postman or Insomnia.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "token", "value": "" },
+    { "key": "bookingId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identity/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"demo@nimbusdesk.dev\",\n  \"password\": \"supersecret\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set('token', body.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identity/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"demo@nimbusdesk.dev\",\n  \"password\": \"supersecret\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Check availability (room 1, Aurora)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/bookings/availability?roomId=1&start=2026-02-01T09:00:00&end=2026-02-01T11:00:00",
+          "host": ["{{baseUrl}}"],
+          "path": ["bookings", "availability"],
+          "query": [
+            { "key": "roomId", "value": "1" },
+            { "key": "start", "value": "2026-02-01T09:00:00" },
+            { "key": "end", "value": "2026-02-01T11:00:00" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Check availability (room 2, Borealis — blocked by partner seed)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/bookings/availability?roomId=2&start=2026-01-10T10:00:00&end=2026-01-10T11:00:00",
+          "host": ["{{baseUrl}}"],
+          "path": ["bookings", "availability"],
+          "query": [
+            { "key": "roomId", "value": "2" },
+            { "key": "start", "value": "2026-01-10T10:00:00" },
+            { "key": "end", "value": "2026-01-10T11:00:00" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set('bookingId', body.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/bookings",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"roomId\": 1,\n  \"requestedBy\": \"demo@nimbusdesk.dev\",\n  \"startTime\": \"2026-02-01T09:00:00\",\n  \"endTime\": \"2026-02-01T11:00:00\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get booking",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/bookings/{{bookingId}}"
+      }
+    },
+    {
+      "name": "Cancel booking",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/bookings/{{bookingId}}"
+      }
+    }
+  ]
+}

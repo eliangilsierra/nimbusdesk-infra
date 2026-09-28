@@ -13,51 +13,51 @@ Convenciones para todos los repos del sistema (no solo este):
 - [x] CONTRIBUTING.md con convención de ramas/commits
 - [x] Diagramas de arquitectura (contexto + contenedores) en `docs/architecture/`
 - [x] ADRs iniciales en `adr/`
-- [x] `docker-compose.yml` base (MySQL + SQL Server) con bloques comentados para cada servicio
+- [x] `docker-compose.yml` con los 7 servicios de v1 habilitados
 
 ## Fase 1 — `nimbusdesk-discovery-server`
-- [ ] Proyecto Spring Boot 3.x / Java 17, dependencia `spring-cloud-starter-netflix-eureka-server`
-- [ ] `@EnableEurekaServer`, `application.yml` en modo standalone (sin auto-registro de sí mismo)
-- [ ] Dockerfile + healthcheck
-- [ ] Habilitar su bloque en `docker-compose.yml` de infra
+- [x] Proyecto Spring Boot 3.x / Java 17, dependencia `spring-cloud-starter-netflix-eureka-server`
+- [x] `@EnableEurekaServer`, `application.yml` en modo standalone (sin auto-registro de sí mismo)
+- [x] Dockerfile
+- [x] Habilitar su bloque en `docker-compose.yml` de infra
 
 ## Fase 2 — `nimbusdesk-api-gateway`
-- [ ] Spring Cloud Gateway (WebFlux) + `spring-cloud-starter-netflix-eureka-client`
-- [ ] Filtro de autenticación JWT (`jjwt`) + `RouteValidator` con lista de rutas públicas/privadas
-- [ ] Manejo centralizado de errores (`BadRequestException`, `UnauthorizedException`, `InternalServerException`)
-- [ ] Rutas declarativas hacia `identity-service`, `booking-service`, `partner-bridge-service`
-- [ ] Habilitar su bloque en `docker-compose.yml`
+- [x] Spring Cloud Gateway (WebFlux) + `spring-cloud-starter-netflix-eureka-client`
+- [x] Filtro de autenticación JWT (`jjwt`) + `RouteValidator` con lista de rutas públicas/privadas
+- [x] Manejo centralizado de errores (`BadRequestException`, `UnauthorizedException`, `InternalServerException`)
+- [x] Rutas declarativas hacia `identity-service`, `booking-service`, `partner-bridge-service`
+- [x] Habilitar su bloque en `docker-compose.yml`
 
 ## Fase 3 — `nimbusdesk-identity-service`
-- [ ] Arquitectura **por capas** (controller → service → persistence) — a propósito, ver [ADR-0003](adr/0003-identity-service-arquitectura-por-capas.md)
-- [ ] Registro/login, emisión de JWT (`jjwt-api`/`impl`/`jackson`), hash de contraseñas
-- [ ] Persistencia en MySQL (JPA)
-- [ ] Registro en Eureka
-- [ ] Habilitar su bloque en `docker-compose.yml`
+- [x] Arquitectura **por capas** (controller → service → persistence) — a propósito, ver [ADR-0003](adr/0003-identity-service-arquitectura-por-capas.md)
+- [x] Registro/login, emisión de JWT (`jjwt-api`/`impl`/`jackson`), hash de contraseñas
+- [x] Persistencia en MySQL (JPA)
+- [x] Registro en Eureka
+- [x] Habilitar su bloque en `docker-compose.yml`
 
 ## Fase 4 — `nimbusdesk-booking-service`
-- [ ] Arquitectura **hexagonal**: `domain/{model,api,spi,usecase}`, `application/{dto,mapper,handler}`, `infrastructure/{input/rest,output/persistence,config}`
-- [ ] Casos de uso: crear reserva, consultar disponibilidad, cancelar reserva, calcular precio
-- [ ] Adaptador de salida JPA → MySQL
-- [ ] Cliente Feign hacia `partner-bridge-service`
-- [ ] Registro en Eureka
-- [ ] Habilitar su bloque en `docker-compose.yml`
+- [x] Arquitectura **hexagonal**: `domain/{model,api,spi,useCase}`, `application/{dto,mapper,handler}`, `infraestructure/{input/rest,output/jpa,output/feignClients}`
+- [x] Casos de uso: crear reserva, consultar disponibilidad, cancelar reserva, calcular precio
+- [x] Adaptador de salida JPA → MySQL
+- [x] Cliente Feign hacia `partner-bridge-service`
+- [x] Registro en Eureka
+- [x] Habilitar su bloque en `docker-compose.yml`
 
 ## Fase 5 — `nimbusdesk-partner-bridge-service`
-- [ ] Arquitectura **hexagonal** con un puerto de salida (`domain/spi`) y **dos adaptadores intercambiables**: uno contra MySQL, otro contra SQL Server, seleccionables por perfil de Spring (`application-mysql.yml` / `application-mssql.yml`)
-- [ ] Caso de uso: sincronizar disponibilidad de un "partner" externo
-- [ ] Registro en Eureka
-- [ ] Habilitar su bloque en `docker-compose.yml`
+- [x] Arquitectura **hexagonal** con un puerto de salida (`domain/spi`) y **dos adaptadores intercambiables**: uno contra MySQL, otro contra SQL Server, seleccionables por perfil de Spring (`application-mysql.yml` / `application-mssql.yml`)
+- [x] Caso de uso: sincronizar disponibilidad de un "partner" externo
+- [x] Registro en Eureka
+- [x] Habilitar su bloque en `docker-compose.yml`
 
 ## Fase 6 — Integración end-to-end
-- [ ] `docker compose up` levanta los 5 servicios backend + MySQL + SQL Server sin intervención manual
+- [x] `docker compose up` levanta los 5 servicios backend + MySQL + SQL Server + web sin intervención manual
 - [ ] Flujo completo probado manualmente: login en `identity-service` → JWT → reserva en `booking-service` vía Gateway → verificación cruzada en `partner-bridge-service`
-- [ ] Colección Postman/Insomnia exportada a `docs/api/`
+- [x] Colección Postman exportada a `docs/api/nimbusdesk.postman_collection.json`
 
 ## Fase 7 — `nimbusdesk-web`
-- [ ] Angular, consumo de la API únicamente a través del Gateway
-- [ ] Login, listado de disponibilidad, creación/cancelación de reservas
-- [ ] Servido con Nginx en Docker, habilitado en `docker-compose.yml`
+- [x] Angular, consumo de la API únicamente a través del Gateway
+- [x] Login, chequeo de disponibilidad, creación/cancelación de reservas
+- [x] Servido con Nginx en Docker, habilitado en `docker-compose.yml`
 
 ## Fase 8 — v2 (repos nuevos, fuera de este set)
 - [ ] Migración a Java 21
