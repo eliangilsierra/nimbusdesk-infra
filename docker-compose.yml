@@ -1,11 +1,9 @@
-version: "3.8"
-
 # NimbusDesk v1 — docker-compose de desarrollo local.
 # Requiere que cada repo nimbusdesk-* esté clonado como hermano de este
 # (ej. D:\Git\nimbusdesk-infra, D:\Git\nimbusdesk-discovery-server, ...).
 #
-# Los servicios de aplicación empiezan comentados: se habilitan a medida que
-# cada repo se va construyendo (ver ROADMAP.md, Fases 1 a 7).
+# Todos los servicios de v1 (Fases 1 a 7) ya están habilitados. Levantar todo:
+#   docker compose up -d --build
 
 networks:
   nimbusdesk-net:
@@ -49,66 +47,84 @@ services:
     networks:
       - nimbusdesk-net
 
-  # --- Fase 1 ---------------------------------------------------------------
-  # discovery-server:
-  #   build: ../nimbusdesk-discovery-server
-  #   container_name: nimbusdesk-discovery-server
-  #   ports:
-  #     - "8761:8761"
-  #   networks:
-  #     - nimbusdesk-net
+  discovery-server:
+    build: ../nimbusdesk-discovery-server
+    container_name: nimbusdesk-discovery-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - nimbusdesk-net
 
-  # --- Fase 2 ---------------------------------------------------------------
-  # api-gateway:
-  #   build: ../nimbusdesk-api-gateway
-  #   container_name: nimbusdesk-api-gateway
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - discovery-server
-  #   networks:
-  #     - nimbusdesk-net
+  api-gateway:
+    build: ../nimbusdesk-api-gateway
+    container_name: nimbusdesk-api-gateway
+    restart: unless-stopped
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-nimbusdesk-dev-secret-change-me-nimbusdesk-dev-secret}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-server
+    networks:
+      - nimbusdesk-net
 
-  # --- Fase 3 ---------------------------------------------------------------
-  # identity-service:
-  #   build: ../nimbusdesk-identity-service
-  #   container_name: nimbusdesk-identity-service
-  #   depends_on:
-  #     - mysql
-  #     - discovery-server
-  #   networks:
-  #     - nimbusdesk-net
+  identity-service:
+    build: ../nimbusdesk-identity-service
+    container_name: nimbusdesk-identity-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-nimbusdesk}
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-nimbusdesk_dev}
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-nimbusdesk-dev-secret-change-me-nimbusdesk-dev-secret}
+    depends_on:
+      - mysql
+      - discovery-server
+    networks:
+      - nimbusdesk-net
 
-  # --- Fase 4 ---------------------------------------------------------------
-  # booking-service:
-  #   build: ../nimbusdesk-booking-service
-  #   container_name: nimbusdesk-booking-service
-  #   depends_on:
-  #     - mysql
-  #     - discovery-server
-  #   networks:
-  #     - nimbusdesk-net
+  booking-service:
+    build: ../nimbusdesk-booking-service
+    container_name: nimbusdesk-booking-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-nimbusdesk}
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-nimbusdesk_dev}
+      EUREKA_URI: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+      - discovery-server
+    networks:
+      - nimbusdesk-net
 
-  # --- Fase 5 ---------------------------------------------------------------
-  # partner-bridge-service:
-  #   build: ../nimbusdesk-partner-bridge-service
-  #   container_name: nimbusdesk-partner-bridge-service
-  #   environment:
-  #     SPRING_PROFILES_ACTIVE: ${PARTNER_BRIDGE_PROFILE:-mysql}
-  #   depends_on:
-  #     - mysql
-  #     - mssql
-  #     - discovery-server
-  #   networks:
-  #     - nimbusdesk-net
+  partner-bridge-service:
+    build: ../nimbusdesk-partner-bridge-service
+    container_name: nimbusdesk-partner-bridge-service
+    restart: unless-stopped
+    environment:
+      PARTNER_BRIDGE_PROFILE: ${PARTNER_BRIDGE_PROFILE:-mysql}
+      DB_URL: ${PARTNER_BRIDGE_DB_URL:-jdbc:mysql://mysql:3306/nimbusdesk}
+      DB_USERNAME: ${PARTNER_BRIDGE_DB_USERNAME:-root}
+      DB_PASSWORD: ${PARTNER_BRIDGE_DB_PASSWORD:-nimbusdesk_dev}
+      EUREKA_URI: http://discovery-server:8761/eureka/
+    depends_on:
+      - mysql
+      - mssql
+      - discovery-server
+    networks:
+      - nimbusdesk-net
 
-  # --- Fase 7 ---------------------------------------------------------------
-  # web:
-  #   build: ../nimbusdesk-web
-  #   container_name: nimbusdesk-web
-  #   ports:
-  #     - "4200:80"
-  #   depends_on:
-  #     - api-gateway
-  #   networks:
-  #     - nimbusdesk-net
+  web:
+    build: ../nimbusdesk-web
+    container_name: nimbusdesk-web
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - nimbusdesk-net
